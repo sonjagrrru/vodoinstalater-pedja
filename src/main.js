@@ -4,6 +4,8 @@ import '@fontsource/barlow-condensed/700.css'
 import {
   ArrowRight,
   Check,
+  ChevronLeft,
+  ChevronRight,
   CircleCheck,
   Clock,
   createIcons,
@@ -21,10 +23,40 @@ import {
   X,
 } from 'lucide'
 import './style.css'
+import grejanjeVideo from './assets/grejanje6.mp4?url'
 
 const phoneDisplay = '062 823 9219'
 const phoneLink = 'tel:+381628239219'
 const asset = (path) => `${import.meta.env.BASE_URL}${path}`
+
+const naturalSort = ([pathA], [pathB]) =>
+  Number(pathA.match(/(\d+)/)[1]) - Number(pathB.match(/(\d+)/)[1])
+
+const vodovodModules = import.meta.glob('./assets/vodoinstalacija*.jpeg', {
+  eager: true,
+  import: 'default',
+  query: '?url',
+})
+const grejanjeModules = import.meta.glob('./assets/grejanje[12345].jpeg', {
+  eager: true,
+  import: 'default',
+  query: '?url',
+})
+
+const vodovodImages = Object.entries(vodovodModules)
+  .filter(([path]) => !path.includes('vodoinstalacija18') && !path.includes('vodoinstalacija12'))
+  .sort(naturalSort)
+  .map(([, url]) => url)
+
+const grejanjeImages = Object.entries(grejanjeModules)
+  .sort(naturalSort)
+  .map(([, url]) => url)
+
+const workTile = (url, index, category, panel) => `
+  <button type="button" class="works__item reveal" data-reveal data-lightbox-open data-panel="${panel}" data-index="${index}">
+    <img src="${url}" alt="${category} — fotografija sa terena ${index + 1}" width="800" height="600" loading="lazy" decoding="async" />
+  </button>
+`
 
 document.querySelector('#app').innerHTML = `
   <a class="skip-link" href="#main">Preskoči na sadržaj</a>
@@ -57,6 +89,7 @@ document.querySelector('#app').innerHTML = `
       <nav class="main-nav" id="main-nav" aria-label="Glavna navigacija">
         <a href="#pocetna">Početna</a>
         <a href="#usluge">Usluge</a>
+        <a href="#radovi">Radovi</a>
         <a href="#o-nama">O nama</a>
         <a href="#kontakt">Kontakt</a>
       </nav>
@@ -205,6 +238,42 @@ document.querySelector('#app').innerHTML = `
       </div>
     </section>
 
+    <section class="works" id="radovi" aria-labelledby="works-title">
+      <div class="shell">
+        <div class="section-heading">
+          <div>
+            <p class="section-kicker section-kicker--blue reveal" data-reveal>Naši radovi</p>
+            <h2 id="works-title" class="section-title split-text" data-split>Pogledajte kako radimo.</h2>
+          </div>
+          <p class="section-intro reveal" data-reveal>
+            Fotografije i video sa terena — vodovodne instalacije i sistemi grejanja urađeni do detalja.
+          </p>
+        </div>
+
+        <div class="works__tabs reveal" data-reveal role="tablist" aria-label="Kategorije radova">
+          <button type="button" class="works__tab is-active" data-tab="vodovod" role="tab" aria-selected="true" aria-controls="radovi-vodovod">
+            <i data-lucide="droplets" aria-hidden="true"></i> Vodoinstalacije
+          </button>
+          <button type="button" class="works__tab" data-tab="grejanje" role="tab" aria-selected="false" aria-controls="radovi-grejanje">
+            <i data-lucide="flame" aria-hidden="true"></i> Grejanje
+          </button>
+        </div>
+
+        <div class="works__grid is-active" id="radovi-vodovod" data-panel="vodovod" role="tabpanel">
+          ${vodovodImages.map((url, index) => workTile(url, index, 'Vodoinstalacija', 'vodovod')).join('')}
+        </div>
+
+        <div class="works__grid" id="radovi-grejanje" data-panel="grejanje" role="tabpanel">
+          <div class="works__item works__item--video reveal" data-reveal>
+            <video class="works__video" controls muted loop playsinline preload="none" poster="${grejanjeImages[0]}" width="800" height="600">
+              <source src="${grejanjeVideo}" type="video/mp4" />
+            </video>
+          </div>
+          ${grejanjeImages.map((url, index) => workTile(url, index, 'Grejanje', 'grejanje')).join('')}
+        </div>
+      </div>
+    </section>
+
     <section class="about" id="o-nama" aria-labelledby="about-title">
       <div class="shell about__grid">
         <div class="about__media reveal" data-reveal>
@@ -276,12 +345,30 @@ document.querySelector('#app').innerHTML = `
       <a href="#pocetna">Nazad na vrh <i data-lucide="arrow-right" aria-hidden="true"></i></a>
     </div>
   </footer>
+
+  <div class="lightbox" id="lightbox" role="dialog" aria-modal="true" aria-label="Prikaz fotografije" hidden>
+    <div class="lightbox__backdrop" data-lightbox-close></div>
+    <button type="button" class="lightbox__close" data-lightbox-close aria-label="Zatvori prikaz">
+      <i data-lucide="x" aria-hidden="true"></i>
+    </button>
+    <button type="button" class="lightbox__nav lightbox__nav--prev" data-lightbox-prev aria-label="Prethodna slika">
+      <i data-lucide="chevron-left" aria-hidden="true"></i>
+    </button>
+    <div class="lightbox__stage">
+      <img class="lightbox__image" src="" alt="" />
+    </div>
+    <button type="button" class="lightbox__nav lightbox__nav--next" data-lightbox-next aria-label="Sledeća slika">
+      <i data-lucide="chevron-right" aria-hidden="true"></i>
+    </button>
+  </div>
 `
 
 createIcons({
   icons: {
     ArrowRight,
     Check,
+    ChevronLeft,
+    ChevronRight,
     CircleCheck,
     Clock,
     Droplets,
@@ -318,6 +405,96 @@ menuButton.addEventListener('click', () => {
 })
 
 navigation.querySelectorAll('a').forEach((link) => link.addEventListener('click', closeMenu))
+
+const worksVideo = document.querySelector('.works__video')
+
+if (worksVideo && 'IntersectionObserver' in window && !window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+  const videoObserver = new IntersectionObserver(
+    (entries) => {
+      entries.forEach((entry) => {
+        if (entry.isIntersecting) {
+          worksVideo.play().catch(() => {})
+        } else {
+          worksVideo.pause()
+        }
+      })
+    },
+    { threshold: 0.5 },
+  )
+
+  videoObserver.observe(worksVideo)
+}
+
+document.querySelectorAll('.works__tab').forEach((tab) => {
+  tab.addEventListener('click', () => {
+    document.querySelectorAll('.works__tab').forEach((btn) => {
+      const isActive = btn === tab
+      btn.classList.toggle('is-active', isActive)
+      btn.setAttribute('aria-selected', String(isActive))
+    })
+    document.querySelectorAll('.works__grid').forEach((grid) => {
+      grid.classList.toggle('is-active', grid.dataset.panel === tab.dataset.tab)
+    })
+  })
+})
+
+const lightbox = document.querySelector('#lightbox')
+const lightboxImage = lightbox.querySelector('.lightbox__image')
+const mediaByPanel = { vodovod: vodovodImages, grejanje: grejanjeImages }
+const labelByPanel = { vodovod: 'Vodoinstalacija', grejanje: 'Grejanje' }
+
+let activePanel = null
+let activeIndex = 0
+let lastFocusedElement = null
+
+const showLightboxImage = () => {
+  const src = mediaByPanel[activePanel][activeIndex]
+  lightboxImage.src = src
+  lightboxImage.alt = `${labelByPanel[activePanel]} — fotografija sa terena ${activeIndex + 1}`
+}
+
+const openLightbox = (panel, index) => {
+  activePanel = panel
+  activeIndex = index
+  lastFocusedElement = document.activeElement
+  showLightboxImage()
+  lightbox.hidden = false
+  document.body.classList.add('lightbox-open')
+  lightbox.querySelector('.lightbox__close').focus()
+}
+
+const closeLightbox = () => {
+  lightbox.hidden = true
+  document.body.classList.remove('lightbox-open')
+  lightboxImage.src = ''
+  lastFocusedElement?.focus()
+}
+
+const stepLightbox = (direction) => {
+  const list = mediaByPanel[activePanel]
+  activeIndex = (activeIndex + direction + list.length) % list.length
+  showLightboxImage()
+}
+
+document.querySelectorAll('[data-lightbox-open]').forEach((button) => {
+  button.addEventListener('click', () => {
+    openLightbox(button.dataset.panel, Number(button.dataset.index))
+  })
+})
+
+lightbox.querySelectorAll('[data-lightbox-close]').forEach((element) => {
+  element.addEventListener('click', closeLightbox)
+})
+
+lightbox.querySelector('[data-lightbox-prev]').addEventListener('click', () => stepLightbox(-1))
+lightbox.querySelector('[data-lightbox-next]').addEventListener('click', () => stepLightbox(1))
+
+document.addEventListener('keydown', (event) => {
+  if (lightbox.hidden) return
+  if (event.key === 'Escape') closeLightbox()
+  if (event.key === 'ArrowLeft') stepLightbox(-1)
+  if (event.key === 'ArrowRight') stepLightbox(1)
+})
 
 document.querySelectorAll('[data-split]').forEach((element) => {
   const label = element.textContent.trim()
