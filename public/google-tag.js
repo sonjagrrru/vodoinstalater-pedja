@@ -10,7 +10,7 @@ document.addEventListener('click', (event) => {
   if (!event.target.closest('a[href^="tel:"]')) return
 
   window.gtag('event', 'conversion', {
-    send_to: 'AW-18480693444/yqi6CN6Ry5odEMSBpOxE',
+    send_to: 'AW-18480693444/5xMaCLyZ2ZodEMSBp0xE',
     transport_type: 'beacon',
   })
 })
